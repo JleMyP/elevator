@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import unittest
 from contextlib import contextmanager
 from unittest.mock import Mock

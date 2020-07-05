@@ -10,7 +10,7 @@ class Direction(IntEnum):
     UP = 1
 
     @staticmethod
-    def negate(direction: 'Direction'):
+    def negate(direction: 'Direction') -> 'Direction':
         if direction == Direction.UP:
             return Direction.DOWN
         if direction == Direction.DOWN:
@@ -19,14 +19,20 @@ class Direction(IntEnum):
 
 
 class PassengersQueue:
+    """ Пассажиры, находящиеся в лифте """
+
     def __init__(self):
         self.queue: Set[int] = set()
 
-    def __contains__(self, floor: int):
+    def __contains__(self, floor: int) -> bool:
+        """ Есть желающие на указанный этаж """
         return floor in self.queue
 
+    def __bool__(self) -> bool:
+        return bool(self.queue)
+
     @property
-    def empty(self):
+    def is_empty(self) -> bool:
         return not self.queue
 
     def append(self, floor: int):
@@ -35,13 +41,15 @@ class PassengersQueue:
     def remove(self, floor: int):
         self.queue.remove(floor)
 
-    def has_up(self, current_floor: int):
+    def has_up(self, current_floor: int) -> bool:
+        """ Eсть желающие выше текущего этажа """
         for passenger in self.queue:
             if passenger > current_floor:
                 return True
         return False
 
-    def has_down(self, current_floor: int):
+    def has_down(self, current_floor: int) -> bool:
+        """ Eсть желающие ниже текущего этажа """
         for passenger in self.queue:
             if passenger < current_floor:
                 return True
@@ -55,6 +63,8 @@ class Caller(NamedTuple):
 
 
 class CallersQueue:
+    """ Очередь вызвавших лифт """
+
     def __init__(self):
         self.counter = 0
         self.queue: Set[Caller] = set()
@@ -65,8 +75,11 @@ class CallersQueue:
                 return True
         return False
 
+    def __bool__(self) -> bool:
+        return bool(self.queue)
+
     @property
-    def empty(self):
+    def is_empty(self) -> bool:
         return not self.queue
 
     def append(self, floor: int, direction: Direction):
@@ -79,10 +92,9 @@ class CallersQueue:
                 self.queue.remove(caller)
                 return
 
-    def get_first(self):
+    def get_first(self) -> int:
         if self.queue:
-            ordered = sorted(self.queue, key=lambda caller: caller.priority)
-            return ordered[0].floor
+            return next(iter(self.queue)).floor
 
     def change_direction(self, floor: int, direction: Direction):
         """ Смена желаемого направения вызывающего без потери приоритета """
@@ -192,17 +204,18 @@ class Elevator:
             self.move_down()
         else:
             cq = self.callers_queue
-            if cq.empty:
+            if not cq:
                 return
 
             if self._last_direction == Direction.NONE:
-                next_floor = self.callers_queue.get_first()
+                next_floor = cq.get_first()
                 if next_floor < floor:
                     self.move_down()
                 else:
                     self.move_up()
                 return
 
+            # условие срабатывания, колбек
             above_want_up = (cq.has_above(floor, Direction.UP), self.move_up)
             above_want_down = (cq.has_above(floor, Direction.DOWN), self.move_up)
             below_want_up = (cq.has_below(floor, Direction.UP), self.move_down)
